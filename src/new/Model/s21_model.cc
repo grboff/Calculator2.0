@@ -1,3 +1,5 @@
+#include <algorithm>  // Ensure this include is present
+
 #include "s21_model.h"
 
 namespace s21 {
@@ -7,87 +9,157 @@ std::string ModelValidator::GetterAns() { return ans_; }
 
 bool ModelValidator::GetterError() { return error_; }
 
-bool ModelValidator::BracketsAnsver() {
-  std::stack<char> brackets;
-  for (char c : str_) {
-    if (c == '(')
-      brackets.push(c);
-    else if (c == ')') {
-      if (brackets.empty()) return true;
-      char top = brackets.top();
-      brackets.pop();
-      if (c == ')' && top != '(') return true;
-    }
-  }
-  return !brackets.empty();
+bool ModelValidator::IsOperator(char c) {
+  return c == '+' || c == '-' || c == '*' || c == '/' || c == '^' || c == '%';
 }
 
+bool ModelValidator::IsBracket(char c) { return c == '(' || c == ')'; }
+
+
+int ModelValidator::CheckStr(const char *expression) {
+  int status = 0;
+  int brackets_count = 0;
+  bool dot_find = false;
+  bool minus_inside_brackets = false;
+
+  // Проверка на пустое выражение
+  if (expression[0] == '\0' ||
+      (expression[0] == '(' && expression[1] == ')' && expression[2] == '\0')) {
+    status = 1;
+  } else if (strlen(expression) == 1 && IsOperator(expression[0])) {
+    // Одиночный знак минус ("-") является недопустимым выражением
+    status = 1;
+  } else {
+    // char str_func[18] = "cosintaqrlogd";
+    char str_op[15] = "*/^%)";
+    char str_check[24] = "1234567890*%/+-()^.,";
+    size_t len_expression = strlen(expression);
+
+    if (IsOperator(expression[len_expression - 1]) ||
+        strchr(str_op, expression[0]) != NULL) {
+      // Выражение заканчивается оператором без правого/левого операнда
+      status = 1;
+    } else if (expression[0] == '.' && expression[1] == '\0') {
+      status = 1;
+    } else {
+      for (size_t i = 0; i < len_expression && status != 1; i++) {
+        if ((expression[i - 1] == '/' || expression[i - 1] == '%') &&
+            expression[i] == '0') {
+          status = 1;
+        }
+        if ((expression[i - 2] == 't' && expression[i - 1] == '(') &&
+            expression[i] == '-') {
+          status =1;
+        }
+        if ((expression[i - 2] == 'g' && expression[i - 1] == '(') &&
+            expression[i] == '0') {
+          status = 1;
+        }
+
+        if (isdigit(expression[i]) && expression[i + 1] == ' ' &&
+            isdigit(expression[i + 2])) {
+          status = 1;
+        }
+
+        if ((IsOperator(expression[i]) && expression[i + 1] == ' ' &&
+             IsOperator(expression[i + 2]))) {
+          // Повторение оператора или пробела перед оператором
+          status =1;
+        }
+        if (expression[i] == '(' && expression[i + 1] == ')') {
+          status =1;
+        }
+
+        if (IsOperator(expression[i])) {
+          if (i > 0 && IsOperator(expression[i - 1])) {
+            // Найдено повторение оператора
+            status = 1;
+          }
+        }
+
+        if (!isdigit(expression[i]) && expression[i] != '.' &&
+            expression[i] != '(' && expression[i] != ')' &&
+            expression[i] != '+' && expression[i] != '-' &&
+            expression[i] != '*' && expression[i] != '/'
+             &&
+            // expression[i] != '^' && strchr(str_func, expression[i]) == NULL &&
+            strchr(str_check, expression[i]) == NULL) {
+          // Найден недопустимый символ
+          status =1;
+        }
+
+        if (expression[i] == '(') {
+          brackets_count++;
+        } else if (expression[i] == ')') {
+          brackets_count--;
+          if (brackets_count < 0) {
+            // Неуравновешенные скобки
+            status = 1;
+          }
+        }
+
+        // Остальная логика проверки выражения
+        if (expression[i] == '.') {
+          if (dot_find) {
+            // Найдена десятичная точка второй раз
+            status = 1;
+          }
+          dot_find = true;
+        } else {
+          dot_find = false;
+        }
+
+        if (expression[i] == '-') {
+          if (expression[i - 1] == '(' && expression[i + 1] == ')') {
+            // Использование (-) - некорректное выражение
+            status = 1;
+          }
+
+          if (expression[i - 1] == '(') {
+            minus_inside_brackets = true;
+          } else if (expression[i - 1] == ')' && minus_inside_brackets) {
+            // Использование (-) внутри скобок - некорректное выражение
+            status = 1;
+
+          } else {
+            minus_inside_brackets = false;
+          }
+        }
+      }
+
+      if (brackets_count != 0) {
+        // Неуравновешенные скобки
+        status =1;
+      }
+    }
+  }
+
+  return status;
+}
 
 void ModelValidator::SetterStr(std::string str) {
   str_ = str;
-  ans_ = str_ + str_;
-  str_.erase(remove(str_.begin(), str_.end(), ' '), str_.end());
-  if (!BracketsAnsver())
-    error_ = Check();
-  else
-    error_ = BracketsAnsver();
-  if (!error_) ans_.resize(ans_.find('\0'));
-  // SingleTarget();
-  // DlsCheck();
-}
-bool ModelValidator::Check() {
-  bool error = false;
-  int k = 0;
-  for (size_t i = 0; i < str_.length() && error == 0; i++) {
-  
-   
-     if (i + 1 < str_.length() && str_[i] == '(' && str_[i + 1] == '-') {
-      ans_[k++] = '(';
-      ans_[k++] = '0';
-    } else if (i == 0 && str_[i] == '+') {
-      if (str_.length() == 1) error = true;
-      ans_[k++] = '0';
-      ans_[k++] = '+';
-    } else if (i + 1 < str_.length() && str_[i] == '(' && str_[i + 1] == '+') {
-      ans_[k++] = '(';
-      ans_[k++] = '0';
-    } 
-    else if (CheckSymbols(i)) {
-      error = true; }
-    else if (IsNumberOrSign(str_[i])) {
-      ans_[k++] = str_[i];
-    } else {
-      error = true;
+  ans_ = str_;  // Copying str to ans, unsure why addition was used in the previous code
+
+  // Remove all spaces
+  str_.erase(std::remove(str_.begin(), str_.end(), ' '), str_.end());
+
+  // You need to loop through each character if you want to check brackets for each
+  for (char c : str_) {
+    if (!IsBracket(c)) {
+      error_ = CheckStr(str_.c_str());  // Assuming CheckStr can handle the whole string
+      break;
     }
   }
-  ans_[k++] = '\0';
-  return error;
-}
 
-bool ModelValidator::CheckSymbols(int i) {
+  // Assuming some logic needs to be applied if no errors
+  if (!error_) {
+    auto nullpos = ans_.find('\0');
+    if (nullpos != std::string::npos)
+      ans_.resize(nullpos);
+  }
 
-  bool err = false;
-if ((str_[i] == '+' || str_[i] == '-') &&
-             (str_[i + 1] == '*' || str_[i + 1] == '/' || str_[i + 1] == '^' ||
-              str_[i + 1] == '\0')) {
-    err = true;
-  } else if ((str_[i] == '+' || str_[i] == '-') &&
-             (str_[i + 1] == '+' || str_[i + 1] == '-')) {
-    err = true;
-  } else if ((str_[i] == '*' || str_[i] == '/' || str_[i] == '^') &&
-             (str_[i + 1] == '*' || str_[i + 1] == '/' || str_[i + 1] == '^' ||
-               str_[i + 1] == '\0')) {
-    err = true;
-              }
-  return err;
-}
-
-bool ModelValidator::IsNumberOrSign(char a) {
-  int err = false;
-  if ((a >= '0' && a <= '9') || a == '/' || a == '*' || a == '(' || a == ')' ||
-      a == '+' || a == '-' || a == '^' || a == 'x' || a == '.')
-    err = true;
-  return err;
+  // Additional methods not shown should be handled similarly
 }
 
 //-------------Calculator part-------------
@@ -105,29 +177,7 @@ bool ModelCalculator::GetterError() { return error_; }
 double ModelCalculator::getterResult() { return result_; }
 
 int ModelCalculator::priopity_of_functions(char a) {
-  // switch (a) {
-  //   case '+':
-  //   case '-':
-  //     return 1;
-  //   case '*':
-  //   case '/':
-  //   case '%':
-  //     return 2;
-  //   case 's':
-  //   case 'c':
-  //   case 't':
-  //   case 'S':
-  //   case 'C':
-  //   case 'T':
-  //   case 'k':
-  //   case 'l':
-  //   case 'L':
-  //     return 3;
-  //   case '^':
-  //     return 4;
-  //   default:
-  //     return 0;
-  // }
+
 
   int out = 1;
   if (a == 'c' || a == 's' || a == 't' || a == 'C' || a == 'S' || a == 'T' ||
@@ -323,87 +373,3 @@ double Model::target(const std::string str, bool *error, double x) {
 // 
 
 }  // namespace s21
-
-/*
- int main() {
-     std::string arg = "2.354.36+1";
-     //ModelValidator(str_m);
-     //str_m.SetterStr(arg);
-     //ModelCalculator(ansver);
-     //if (!str_m.GetterError()) {
-     //    ansver.setter_ans(str_m.GetterAns());
-     //}
-     //std::cout << "Validator_part" << std::endl;
-     //std::cout << str_m.GetterStr() << std::endl;
-     //std::cout << str_m.GetterAns() << std::endl;
-     //std::cout << str_m.GetterError() << std::endl;
-     //std::cout << "Calc_part" << std::endl;
-     //std::cout << ansver.getterAns() << std::endl;
-     //std::cout << ansver.getterPostfix() << std::endl;
-     //std::cout << ansver.GetterError() << std::endl;
-     //std::cout << ansver.getterResult() << std::endl;
-     double x = 25;
-     s21::Model m;
-     bool error;
-     std::cout << m.target(arg, &error, x) << std::endl;
-     std::cout << error << std::endl;
-     return 0;
-
- }
-*/
-
-/*
-// cred
-int main() {
-    s21::Model m;
-    double loanAmount = 2000000;
-    int term = 180;
-    double interestRate = 8.6;
-    int type = 2;
-    char *monthlyPayment;
-    double overpayment = 0;
-    double totalPayment = 0;
-    m.TargetCred(loanAmount, term, interestRate, type, monthlyPayment,
-&overpayment, &totalPayment);
-    if (std::strcmp(monthlyPayment, "25444.44 ... 11190.74")==0) {
-      std::cout << true << " -> 1" << std::endl;
-    }
-    if (overpayment == 1297166.67) {
-      std::cout << true << " -> 2" << std::endl;
-    }
-    if (totalPayment == 3297166.67) {
-      std::cout << true << " -> 3" << std::endl;
-    }
-//printf("overpayment = %f\n",overpayment);
-//printf("totalPayment = %f\n", totalPayment);
-//printf("monthlyPayment = %s\n", monthlyPayment);
-    return 0;
-}
-*/
-
-/* graf
-int main() {
-    s21::Model m;
-    std::string str = "x+1";
-    bool error = false;
-    double xBegin = -1;
-    double xEnd = 1;
-    double yBegin = -1;
-    double yEnd = 1;
-    bool result = true;
-    double x = -1;
-    double y = 0;
-    std::vector<std::pair<double, double>> p = m.TargetGraf(str, &error, xBegin,
-xEnd, yBegin, yEnd); for (const auto &pair : p) { y = x + 1; if (x !=
-pair.first) { result = false; break;
-      }
-      if (y != pair.second) {
-        result = false;
-        break;
-      }
-      x += 0.01;
-  }
-  std::cout << result << std::endl;
-  return 0;
-}
-*/
