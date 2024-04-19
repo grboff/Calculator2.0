@@ -7,19 +7,6 @@ std::string ModelValidator::GetterAns() { return ans_; }
 
 bool ModelValidator::GetterError() { return error_; }
 
-// bool ModelValidator::is_operator(char c) {
-//   return c == '+' || c == '-' || c == '*' || c == '/' || c == '^' || c == '%';
-// }
-
-// bool ModelValidator::is_trigo(char c) {
-//   return (c == 's') || (c == 'c') || (c == 't') || (c == 'S') || (c == 'C') ||
-//          (c == 'T') || (c == 'k') || (c == 'l' || (c == 'L'));
-// }
-
-// bool ModelValidator::is_bracket(char c) { return c == '(' || c == ')'; }
-
-
-
 bool ModelValidator::BracketsAnsver() {
   std::stack<char> brackets;
   for (char c : str_) {
@@ -64,9 +51,10 @@ bool ModelValidator::Check() {
     } else if (i + 1 < str_.length() && str_[i] == '(' && str_[i + 1] == '+') {
       ans_[k++] = '(';
       ans_[k++] = '0';
-    } else if (CheckSymbols(i)) {
-      error = true;
-    } else if (IsNumberOrSign(str_[i])) {
+    } 
+    else if (CheckSymbols(i)) {
+      error = true; }
+    else if (IsNumberOrSign(str_[i])) {
       ans_[k++] = str_[i];
     } else {
       error = true;
@@ -77,14 +65,8 @@ bool ModelValidator::Check() {
 }
 
 bool ModelValidator::CheckSymbols(int i) {
+
   bool err = false;
-  // if ((str_[i] == 'x' || str_[i] == ')') && str_[i + 1] != '\0' &&
-  //     ((str_[i + 1] >= '0' && str_[i + 1] <= '9') || str_[i + 1] == 'x')) {
-  //   err = true;
-  // if (str_[i + 1] != '\0' &&
-  //            (str_[i + 1] == 'x' || str_[i + 1] == '(') &&
-  //            ((str_[i] >= '0' && str_[i] <= '9') || str_[i] == 'x')) {
-  //   err = true;
 if ((str_[i] == '+' || str_[i] == '-') &&
              (str_[i + 1] == '*' || str_[i + 1] == '/' || str_[i + 1] == '^' ||
               str_[i + 1] == '\0')) {
@@ -96,23 +78,6 @@ if ((str_[i] == '+' || str_[i] == '-') &&
              (str_[i + 1] == '*' || str_[i + 1] == '/' || str_[i + 1] == '^' ||
                str_[i + 1] == '\0')) {
     err = true;
-  // } else if (str_[i] == ')' &&
-  //            (str_[i + 1] == 'x' || (str_[i + 1] >= '0' && str_[i + 1] <= 9) ||
-  //             str_[i + 1] == 'c' || str_[i + 1] == 's' || str_[i + 1] == 't' ||
-  //             str_[i + 1] == 'a' || str_[i + 1] == 'l')) {
-  //   err = true;
-  // } else if (str_[i] == '(' &&
-  //            (str_[i + 1] == ')' || str_[i + 1] == '*' || str_[i + 1] == '/' ||
-  //             str_[i + 1] == 'm' || str_[i + 1] == '^')) {
-  //   err = true;
-  // } else if (str_[i] == '.' &&
-  //            (str_[i + 1] == '.' || str_[i + 1] == '+' || str_[i + 1] == '-' ||
-  //             str_[i + 1] == '*' || str_[i + 1] == '/' || str_[i + 1] == '(' ||
-  //             str_[i + 1] == ')' || str_[i + 1] == '^' || str_[i + 1] == 'm' ||
-  //             str_[i + 1] == 'c' || str_[i + 1] == 's' || str_[i + 1] == 't' ||
-  //             str_[i + 1] == 'a' || str_[i + 1] == 'l')) {
-  //   err = true;
-  // }
               }
   return err;
 }
